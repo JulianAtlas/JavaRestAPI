@@ -26,7 +26,7 @@ public class ProductService {
         return products.get(id);
     }
 
-    public Set<Product> getAllProducts() {
+    public Set<Product> listProducts() {
         return new HashSet<>(products.values());
     }
 
