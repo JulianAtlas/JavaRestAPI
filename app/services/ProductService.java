@@ -22,7 +22,11 @@ public class ProductService {
         currentId++;
     }
 
-    public Product getProduct(int id) {
+    public Product getProduct(int id) throws Exception{
+
+        if(!products.containsKey(id)){
+            throw new Exception("id not found");
+        }
         return products.get(id);
     }
 
@@ -39,8 +43,11 @@ public class ProductService {
         return null;
     }
 
-    public boolean deleteProduct(int id) {
-        return products.remove(id) != null;
+    public void deleteProduct(int id) throws Exception{
+        if(!products.containsKey(id)){
+            throw new Exception("id not found");
+        }
+        products.remove(id);
     }
 
 }
