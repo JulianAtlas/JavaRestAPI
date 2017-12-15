@@ -27,7 +27,7 @@ import static org.fest.assertions.Assertions.*;
 * If you are interested in mocking a whole application, see the wiki for more details.
 *
 */
-public class ApplicationTest {
+public class ProductServiceTest {
 
     @Test
     public void simpleCheck() {
@@ -43,14 +43,14 @@ public class ApplicationTest {
         Product product = new Product(name);
         ProductService productService = new ProductService();
 
-        //operation
-        productService.createProduct(product);
-        Product searchedProduct = null;
-        searchedProduct = productService.getProduct(1);
+        assertThat(productService.listProducts().contains(product)).isFalse();
 
-        //tests
-        assertThat(productService.listProducts().size()).isEqualTo(1);
-        assertThat(searchedProduct.getName()).isEqualTo(name);
+        productService.createProduct(product);
+        Product searchedProduct = productService.getProduct(1);
+
+        assertThat(productService.listProducts().contains(product)).isTrue();
+
+
     }
 
     @Test
@@ -84,24 +84,22 @@ public class ApplicationTest {
 
     public void TestWhenProductIsDeletedThenItsRemovedFromProductList() {
         String name = "pelota";
-        Product product1 = new Product(name);
+        Product product = new Product(name);
         ProductService productService = new ProductService();
-        productService.createProduct(product1);
+        productService.createProduct(product);
 
-        assertThat(productService.listProducts().size()).isEqualTo(1);
+        assertThat(productService.listProducts().contains(product)).isTrue();
 
-        //operation
         productService.deleteProduct(1);
 
-        //tests
-        assertThat(productService.listProducts().size()).isEqualTo(0);
+        assertThat(productService.listProducts().contains(product)).isFalse();
+
     }
 
     @Test(expected = Exception.class)
     @SneakyThrows
     public void TestWhenDeleteProductWithNotFoundIdThenNoProductIsDeleted() {
         String name = "pelota";
-        String err = "";
         Product product1 = new Product(name);
         ProductService productService = new ProductService();
         productService.createProduct(product1);
@@ -109,6 +107,20 @@ public class ApplicationTest {
         //operation
         productService.deleteProduct(999);
     }
+
+    @Test(expected = Exception.class)
+    @SneakyThrows
+    public void TestWhenGetProductWithNotFoundIdThenThrowsError() {
+        String name = "botella";
+        Product product1 = new Product(name);
+        ProductService productService = new ProductService();
+        productService.createProduct(product1);
+
+        //operation
+        productService.getProduct(999);
+    }
+
+
 
 
     @Test
