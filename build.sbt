@@ -1,12 +1,8 @@
+import play.Project._
+
 name := "JavaRestAPI"
 
-version := "1.0-SNAPSHOT"
+version := "1.0"
 
-libraryDependencies ++= Seq(
-  javaJdbc,
-  javaEbean,
-  cache,
-  "org.projectlombok" % "lombok" % "1.16.14"
-)
+playJavaSettings
 
-play.Project.playJavaSettings
