@@ -13,7 +13,8 @@ object ApplicationBuild extends Build {
     javaJpa,
     cache,
     "org.projectlombok" % "lombok" % "1.16.14",
-    "org.hibernate" % "hibernate-entitymanager" % "3.6.9.Final"
+    "org.hibernate" % "hibernate-entitymanager" % "3.6.9.Final",
+    "commons-logging" % "commons-logging" % "1.2"
     // Add your project dependencies here,
   )
 

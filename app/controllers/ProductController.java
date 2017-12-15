@@ -1,11 +1,13 @@
 package controllers;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javassist.NotFoundException;
 import models.Product;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.springframework.stereotype.Controller;
+import play.db.jpa.Transactional;
 import play.mvc.Result;
 import services.ProductService;
 
@@ -15,22 +17,20 @@ public class ProductController extends play.mvc.Controller {
     // luego pasarlo a sprin
     private static ProductService productService = new ProductService();
 
-    public static Result createProduct(){
-        String jsonRequest = request().body().asJson().asText();
-        Product p;
-        String jsonInString;
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            p= mapper.readValue( jsonRequest , Product.class);
-        }catch (Exception e){
-            return badRequest(e.getMessage());
-        }
 
+    @Transactional
+    public static Result createProduct(){
+        JsonNode body = request().body().asJson();
+
+        Product p = new Product(body.get("Name").asText());
+
+        String jsonInString;
         if (p.getName().trim().length() == 0 ){
             return badRequest("The name of the product can't be empty");
         }
         try {
-            jsonInString = new ObjectMapper().writeValueAsString(productService.createProduct(p));
+            Product ps = productService.createProduct(p); // aca hay excepcion
+            jsonInString = new ObjectMapper().writeValueAsString(ps);
         }catch(Exception e ){
             return internalServerError(e.getMessage());
         }

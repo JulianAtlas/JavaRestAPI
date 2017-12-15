@@ -3,6 +3,7 @@ package services;
 import javassist.NotFoundException;
 import models.Product;
 import org.hibernate.validator.internal.metadata.core.AnnotationProcessingOptionsImpl;
+import play.db.jpa.JPA;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,8 @@ public class ProductService {
         product.setid(currentId);
         currentId++;
         createProductMutex.release();
+
+        JPA.em().createNativeQuery("select * from PRODUCTS");
 
         products.put(product.getId(), product);
         return product;
