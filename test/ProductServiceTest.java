@@ -54,6 +54,7 @@ public class ProductServiceTest {
     }
 
     @Test
+    @SneakyThrows
     public void TestWhenListItemsThenTheyAreListedCorrectly() {
         String name1 = "pelota";
         String name2 = "botella";

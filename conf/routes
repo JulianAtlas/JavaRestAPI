@@ -7,3 +7,9 @@ GET     /                           controllers.Application.index()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+# Static map of rest services
+POST    /products           controllers.ProductController.createProduct()
+PUT     /products           controllers.ProductController.updateProduct()
+GET     /products           controllers.ProductController.listProducts()
+GET     /products/:id       controllers.ProductController.getProduct(id: Integer)
+DELETE  /products/:id       controllers.ProductController.deleteProduct(id: Integer)
