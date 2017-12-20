@@ -6,6 +6,7 @@ import lombok.SneakyThrows;
 import models.Product;
 import org.junit.*;
 
+import play.db.jpa.Transactional;
 import play.mvc.*;
 import play.test.*;
 import play.data.DynamicForm;
@@ -29,96 +30,105 @@ import static org.fest.assertions.Assertions.*;
 */
 public class ProductServiceTest {
 
-    @Test
-    public void simpleCheck() {
-        int a = 1 + 1;
-        assertThat(a).isEqualTo(2);
-    }
-
 
     @Test
-    @SneakyThrows
     public void TestWhenProductIsCreatedThenItsAddedCorrectlyToProductList() {
-        String name = "pelota";
-        Product product = new Product(name);
-        ProductService productService = new ProductService();
+        running(testServer(9000, fakeApplication()), () -> {
+            String name = "pelota";
+            Product product = new Product(name);
+            ProductService productService = new ProductService();
 
-        assertThat(productService.listProducts().contains(product)).isFalse();
+            assertThat(productService.listProducts().contains(product)).isFalse();
 
-        productService.createProduct(product);
-        Product searchedProduct = productService.getProduct(1);
 
-        assertThat(productService.listProducts().contains(product)).isTrue();
+            productService.createProduct(product);
+            Product searchedProduct = productService.getProduct(1);
 
+            assertThat(productService.listProducts().contains(product)).isTrue();
+        });
 
     }
 
     @Test
     @SneakyThrows
     public void TestWhenListItemsThenTheyAreListedCorrectly() {
-        String name1 = "pelota";
-        String name2 = "botella";
-        String name3 = "computadora";
+            running(testServer(9000, fakeApplication()), new Runnable() {
+                @Override
+                public void run() {
+                    String name1 = "pelota";
+                    String name2 = "botella";
+                    String name3 = "computadora";
 
-        Product product1 = new Product(name1);
-        Product product2 = new Product(name2);
-        Product product3 = new Product(name3);
+                    Product product1 = new Product(name1);
+                    Product product2 = new Product(name2);
+                    Product product3 = new Product(name3);
 
-        ProductService productService = new ProductService();
-        productService.createProduct(product1);
-        productService.createProduct(product2);
-        productService.createProduct(product3);
+                    ProductService productService = new ProductService();
+                    productService.createProduct(product1);
+                    productService.createProduct(product2);
+                    productService.createProduct(product3);
 
-        //operation
-        Set<Product> products = productService.listProducts();
+                    //operation
+                    Collection<Product> products = productService.listProducts();
 
-        //tests
-        assertThat(products.size()).isEqualTo(3);
-        assertThat(products.contains(product1)).isTrue();
-        assertThat(products.contains(product2)).isTrue();
-        assertThat(products.contains(product3)).isTrue();
+                    //tests
+                    assertThat(products.size()).isEqualTo(3);
+                    assertThat(products.contains(product1)).isTrue();
+                    assertThat(products.contains(product2)).isTrue();
+                    assertThat(products.contains(product3)).isTrue();
+                }
+            });
     }
 
 
     @Test
     @SneakyThrows
-
     public void TestWhenProductIsDeletedThenItsRemovedFromProductList() {
-        String name = "pelota";
-        Product product = new Product(name);
-        ProductService productService = new ProductService();
-        productService.createProduct(product);
+        running(testServer(9000, fakeApplication()), () ->  {
+                String name = "pelota";
+                Product product = new Product(name);
+                ProductService productService = new ProductService();
+                productService.createProduct(product);
 
-        assertThat(productService.listProducts().contains(product)).isTrue();
+                assertThat(productService.listProducts().contains(product)).isTrue();
 
-        productService.deleteProduct(1);
+                productService.deleteProduct(1);
 
-        assertThat(productService.listProducts().contains(product)).isFalse();
-
+                assertThat(productService.listProducts().contains(product)).isFalse();
+        });
     }
 
-    @Test(expected = Exception.class)
+    @Test
     @SneakyThrows
     public void TestWhenDeleteProductWithNotFoundIdThenNoProductIsDeleted() {
-        String name = "pelota";
-        Product product1 = new Product(name);
-        ProductService productService = new ProductService();
-        productService.createProduct(product1);
+        running(testServer(9000, fakeApplication()), () -> {
+            String name = "pelota";
+            Product product1 = new Product(name);
+            ProductService productService = new ProductService();
+            productService.createProduct(product1);
 
-        //operation
-        productService.deleteProduct(999);
+
+            int longOriginalDeProds = productService.listProducts().size();
+            //operation
+            productService.deleteProduct(999);
+
+            assertThat(longOriginalDeProds == productService.listProducts().size()).isTrue();
+        });
     }
 
-    @Test(expected = Exception.class)
+    @Test
     @SneakyThrows
-    public void TestWhenGetProductWithNotFoundIdThenThrowsError() {
-        String name = "botella";
-        Product product1 = new Product(name);
-        ProductService productService = new ProductService();
-        productService.createProduct(product1);
+    public void TestWhenGetProductWithNotFoundIdThenReturnsNull() {
+        running(testServer(9000, fakeApplication()), () -> {
+            String name = "botella";
+            Product product1 = new Product(name);
+            ProductService productService = new ProductService();
+            productService.createProduct(product1);
 
-        //operation
-        productService.getProduct(999);
+            //operation
+            Product p = productService.getProduct(999);
+            assertThat(p == null).isTrue();
+        });
     }
 
 
@@ -127,37 +137,62 @@ public class ProductServiceTest {
     @Test
     @SneakyThrows
     public void TestWhenGettingProductByIdThenCorrectProductIsReturned() {
-        String name = "botella";
-        Product product = new Product(name);
-        ProductService productService = new ProductService();
-        productService.createProduct(product);
-        Product searchedProduct = null;
-        //operation
-        searchedProduct = productService.getProduct(1);
+        running(testServer(9000, fakeApplication()), () -> {
+            String name = "botella";
+            Product product = new Product(name);
+            ProductService productService = new ProductService();
+            productService.createProduct(product);
+            Product searchedProduct = null;
+            //operation
+            searchedProduct = productService.getProduct(1);
 
-        //tests
-        assertThat(searchedProduct).isEqualTo(product);
+            //tests
+            assertThat(searchedProduct).isEqualTo(product);
+        });
     }
 
 
     @Test
     @SneakyThrows
     public void TestWhenProductIsUpdatedThenChangesAreSaved() {
-        String name = "botella";
-        String newName = "pelota";
-        Product product = new Product(name);
-        ProductService productService = new ProductService();
-        productService.createProduct(product);
+        running(testServer(9000, fakeApplication()), () -> {
+            String oldName = "botella";
+            String newName = "pelota";
+            Product product = new Product(oldName);
+            ProductService productService = new ProductService();
+            product = productService.createProduct(product);
+
+
+            //operation
+            product.setName(newName);
+            productService.updateProduct(product);
+
+            Product searchedProduct = productService.getProduct(product.getId());
+            //operation
+
+            assertThat(searchedProduct.getName()).isEqualTo(newName);
+        });
+    }
+
+    @Test
+    @SneakyThrows
+    public void TestWhenProductIsUpdatedThoesNotCreateANewProduct() {
+        running(testServer(9000, fakeApplication()), () -> {
+            String oldName = "botella";
+            String newName = "pelota";
+            Product product = new Product(oldName);
+            ProductService productService = new ProductService();
+            product = productService.createProduct(product);
 
 
 
-        //operation
-        product.setName(newName);
-        productService.updateProduct(product);
-        Product searchedProduct = null;
-        //operation
-        searchedProduct = productService.getProduct(1);
+            //operation
+            product.setName(newName);
+            productService.updateProduct(product);
 
-        assertThat(searchedProduct.getName()).isEqualTo(newName);
+            assertThat(productService.listProducts().size() == 1).isTrue();
+            //operation
+
+        });
     }
 }

@@ -1,65 +1,75 @@
 package services;
 
-import javassist.NotFoundException;
+
+import lombok.SneakyThrows;
 import models.Product;
-import org.hibernate.validator.internal.metadata.core.AnnotationProcessingOptionsImpl;
 import play.db.jpa.JPA;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import javax.persistence.Query;
+import java.util.*;
+
 
 public class ProductService {
-    private int currentId;
-    private Map<Integer, Product> products;
-    private Semaphore createProductMutex = new Semaphore(1);
 
-    public ProductService(){
-        products = new ConcurrentHashMap<>();
-        currentId = 1;
-    }
+    @SneakyThrows
+    public Product createProduct(Product product){
+        JPA.withTransaction(()->JPA.em().persist(product));
 
-    public Product createProduct(Product product) throws Exception {
-        createProductMutex.acquire();
-        product.setid(currentId);
-        currentId++;
-        createProductMutex.release();
-
-        JPA.em().createNativeQuery("select * from PRODUCTS");
-
-        products.put(product.getId(), product);
         return product;
     }
 
-    public Product getProduct(int id) throws Exception{
-        validateIdExists(id);
-        return products.get(id);
+    @SneakyThrows
+    public Product getProduct(int id){
+
+        return JPA.withTransaction(()->{
+            if(idExists(id)) return JPA.em().find(Product.class, id);
+            else return null;
+        });
     }
 
-    public Set<Product> listProducts() {
-        return new HashSet<>(products.values());
+    @SneakyThrows
+    public Collection<Product> listProducts() {
+
+        return JPA.withTransaction(
+                ()->{
+                    Query query = JPA.em().createNativeQuery("select * from PRODUCTS", Product.class);
+                    return (List<Product>)query.getResultList();
+                });
     }
 
-    public Product updateProduct(Product product) throws Exception {
+    @SneakyThrows
+    public Product updateProduct(Product product) {
         int id = product.getId();
-        validateIdExists(id);
 
-        products.put(id, product);
-        return product;
+        return JPA.withTransaction(()->{
+            if(idExists(id)){
+                Product p = JPA.em().find(Product.class,id);
+                p.updateBy(product);
+                JPA.em().persist(p);
+                return p;
+            }
+            else return null;
+        });
     }
 
-    public void deleteProduct(int id) throws Exception{
-        validateIdExists(id);
+    @SneakyThrows
+    public Product deleteProduct(int id){
 
-        products.remove(id);
+        return JPA.withTransaction(()->{
+            if(idExists(id)){
+                Product p = JPA.em().find(Product.class,id);
+                JPA.em().remove(p);
+                return p;
+            }
+            else return null;
+        });
     }
 
-    private void validateIdExists(int id) throws Exception {
-        if(!products.containsKey(id)){
-            throw new NotFoundException("id not found");
+    private boolean idExists(int id){
+
+        if(JPA.em().find(Product.class, id) == null){
+            return false;
         }
+        return true;
     }
 }
