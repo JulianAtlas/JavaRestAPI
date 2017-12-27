@@ -3,91 +3,100 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javassist.NotFoundException;
 import models.Product;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import play.Logger;
-import play.db.jpa.Transactional;
 import play.mvc.Result;
 import services.ProductService;
-import utils.RunTimeNotFoundException;
 
 @Controller
 public class ProductController extends play.mvc.Controller {
 
     // luego pasarlo a spring
-    private static ProductService productService = new ProductService();
+    @Autowired
+    private ProductService productService;
 
-    public static Result createProduct(){
+    public Result createProduct(){
         String responseBody;
 
         JsonNode requestBody = request().body().asJson();
-        JsonNode productNameInJson = requestBody.get("Name");
-        if( productNameInJson == null) return badRequest("Invalid Json sent - doesn't have Name field");
+        JsonNode nameJson = requestBody.get("name");
+        JsonNode descriptionJson = requestBody.get("description");
+
+        Result errorResponse = validationCreateRequest(nameJson);
+        if (errorResponse != null) return errorResponse;
 
 
-        String  productName = productNameInJson.asText();
-        if (productName == null || productName.trim().length() == 0){
-            return badRequest("The name of the product can't be empty");
+        Product p = new Product();
+        p.setName(nameJson.asText());
+        if(descriptionJson != null){
+            p.setDescription(descriptionJson.asText());
         }
 
-        Product p = new Product(productName);
         try {
             p = productService.createProduct(p);
             responseBody = new ObjectMapper().writeValueAsString(p);
         }catch(Exception e ){
-            return internalServerError(e.getMessage());
+            Logger.error(e.getMessage());
+            return internalServerError();
         }
         return ok(responseBody);
     }
 
-    public static Result updateProduct(){
+
+    public Result updateProduct(){
         Product p;
-        String responseBody;
         JsonNode requestBody = request().body().asJson();
 
-        JsonNode productNameInJson = requestBody.get("Name");
-        if( productNameInJson == null) return badRequest("Invalid Json sent - doesn't have Name field ");
-         String  productNewName = productNameInJson.asText();
-
-        JsonNode idInJson = requestBody.get("Id");
-        if(idInJson == null) return badRequest("Invalid Json sent - doesn't have Id field");
-        int productId = requestBody.get("Id").asInt();
-
-        if (productNewName == null || productNewName.trim().length() == 0 ){
-            return badRequest("The name of the product can't be empty");
-        }
-
+        JsonNode nameInJson = requestBody.get("name");
+        JsonNode idJson = requestBody.get("id");
+        JsonNode descriptionJson = requestBody.get("description");
         p = new Product();
-        p.setName(productNewName);
-        p.setId(productId);
+
+
+        Result errorResponse = validateUpdateRequest(nameInJson, idJson);
+        if (errorResponse != null) return errorResponse;
+
+
+        if (nameInJson != null){
+            p.setName(nameInJson.asText());
+        }
+        if(descriptionJson != null){
+            p.setDescription(descriptionJson.asText());
+        }
+        p.setId(idJson.asInt());
+
+
         try {
 
             p = productService.updateProduct(p);
             if(p == null)  return notFound("Not found");
-            responseBody = new ObjectMapper().writeValueAsString(p);
+            String responseBody = new ObjectMapper().writeValueAsString(p);
 
+            return ok(responseBody);
         }catch (Exception e ){
-            return internalServerError(e.getMessage());
+            Logger.error(e.getMessage());
+            return internalServerError();
         }
-
-        return ok(responseBody);
     }
 
-    public static Result listProducts(){
+
+
+    public Result listProducts(){
         String responseBody;
         try {
 
             responseBody = new ObjectMapper().writeValueAsString(productService.listProducts());
 
         }catch(Exception e ){
-            return internalServerError(e.getMessage());
+            Logger.error(e.getMessage());
+            return internalServerError();
         }
         return ok(responseBody);
     }
 
-    public static Result getProduct(Integer id){
+    public Result getProduct(Integer id){
         String responseBody ;
         try {
 
@@ -96,12 +105,13 @@ public class ProductController extends play.mvc.Controller {
             responseBody = new ObjectMapper().writeValueAsString(p);
 
         }catch (Exception e ){
-            return internalServerError(e.getMessage());
+            Logger.error(e.getMessage());
+            return internalServerError();
         }
         return ok(responseBody);
     }
 
-    public static Result deleteProduct(Integer id){
+    public Result deleteProduct(Integer id){
         try {
 
             Product productDeleted = productService.deleteProduct(id);
@@ -110,9 +120,35 @@ public class ProductController extends play.mvc.Controller {
             }
 
         }catch (Exception e ){
-            return internalServerError(e.getMessage());
+            Logger.error(e.getMessage());
+            return internalServerError();
         }
         return ok();
     }
+
+/////////////////////////////////////////////////
+
+    private Result validateUpdateRequest(JsonNode nameInJson, JsonNode idJson) {
+        if(idJson == null) {
+            return badRequest("Invalid Json sent - doesn't have Id field");
+        }
+
+        if (nameInJson != null && nameInJson.asText().trim().length() == 0 ){
+            return badRequest("The name of the product can't be empty");
+        }
+        return null;
+    }
+
+    private static Result validationCreateRequest(JsonNode productNameInJson) {
+        if( productNameInJson == null) {
+            return badRequest("Invalid Json sent - doesn't have Name field");
+        }
+
+        if (productNameInJson.asText().trim().length() == 0){
+            return badRequest("The name of the product can't be empty");
+        }
+        return null;
+    }
+
 
 }

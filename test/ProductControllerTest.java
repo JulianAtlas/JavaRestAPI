@@ -1,6 +1,7 @@
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import models.Product;
 import org.junit.*;
 
 import play.libs.Json;
@@ -9,6 +10,7 @@ import play.libs.WS.Response;
 import static play.libs.Json.newObject;
 import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
+import org.mockito.*;
 
 
 /**
@@ -19,21 +21,53 @@ import static org.fest.assertions.Assertions.*;
  */
 public class ProductControllerTest
 {
+    Product p1;
+    Product p2;
+    Product p3;
+    Product p4;
+
+
+
+    @Before
+    public void createProductsInDB (){
+        p1 = new Product();
+        p1.setName("pelota");
+        p1.setId(1);
+        p1.setDescription("para jugar al futbol");
+
+        p2 = new Product();
+        p2.setName("soga");
+        p2.setId(2);
+
+        p3 = new Product();
+        p3.setName("mesa");
+        p3.setId(3);
+        p3.setDescription("para tomar el te");
+
+        p4 = new Product();
+        p4.setName("cama");
+        p4.setId(4);
+        p4.setDescription("");
+
+
+    }
+
+
+
     @Test
     public void TestWhenCreateProductGetOkResponseCode() {
         running(testServer(9000, fakeApplication()), () -> {
             ObjectNode json = newObject();
             String productName = "pelota";
-            json.put("Name", productName);
+            json.put("name", productName);
 
             Response response = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json).get(3000L);
-
 
             assertThat(response.getStatus()).isEqualTo(OK);
 
             JsonNode responseJson = Json.parse(response.getBody());
-            assertThat(responseJson.get("Name").asText().equals(productName)).isTrue();
-            assertThat(responseJson.get("Id").asInt() == 1).isTrue();
+            assertThat(responseJson.get("name").asText().equals(productName)).isTrue();
+            assertThat(responseJson.get("id").asInt() == 5).isTrue();
         });
     }
 
@@ -42,7 +76,7 @@ public class ProductControllerTest
         running(testServer(9000, fakeApplication()), () -> {
             ObjectNode json = newObject();
             String productName = "";
-            json.put("Name", productName);
+            json.put("name", productName);
 
             Response response = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L);
 
@@ -67,19 +101,6 @@ public class ProductControllerTest
     @Test
     public void TestWhenListProductsGetAllProductCreated(){
         running(testServer(9000, fakeApplication()), () -> {
-            ObjectNode json = newObject();
-            String productName1 = "pelota";
-            String productName2 = "soga";
-            String productName3 = "mesa";
-
-            json.put("Name", productName1);
-            WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L);
-
-            json.put("Name", productName2);
-            WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L);
-
-            json.put("Name", productName3);
-            WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L);
 
             //operation
             Response response =  WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").get().get(3000L);
@@ -87,59 +108,40 @@ public class ProductControllerTest
             //asserts
 
             assertThat(response.getStatus()).isEqualTo(OK);
-            assertThat(response.getBody().toString()).isEqualTo("[{\"Id\":1,\"Name\":\"pelota\"},{\"Id\":2,\"Name\":\"soga\"},{\"Id\":3,\"Name\":\"mesa\"}]");
+            String body = response.getBody();
+            JsonNode json = Json.parse(body);
+
+            for(JsonNode aJson : json){
+                System.out.println("JSON " + aJson.toString());
+                for (JsonNode other : aJson.get("name")){
+                    System.out.println("papap" + other.toString());
+                }
+            }
+            assertThat(json.size()).isEqualTo(4);
+            assertThat(body.toString()).isEqualTo("[{\"id\":1,\"name\":\"pelota\",\"description\":\"para jugar al futbol\"},{\"id\":2,\"name\":\"soga\",\"description\":null},{\"id\":3,\"name\":\"mesa\",\"description\":\"para tomar el te\"},{\"id\":4,\"name\":\"cama\",\"description\":\"\"}]");
         });
     }
 
     @Test
     public void TestWhenGetProductReturnsCorrectOne(){
         running(testServer(9000, fakeApplication()), () -> {
-            ObjectNode json = newObject();
-            String productName1 = "pelota";
-            String productName2 = "soga";
-            String productName3 = "mesa";
-
-            json.put("Name", productName1);
-            JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
-
-            json.put("Name", productName2);
-            JsonNode jsonProduct2 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
-
-            json.put("Name", productName3);
-            JsonNode jsonProduct3 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
 
             //operation
             Response response1 =  WS.url("http://localhost:9000/products/1").setHeader("Content-Type", "application/json").get().get(3000L);
-            Response response2 =  WS.url("http://localhost:9000/products/2").setHeader("Content-Type", "application/json").get().get(3000L);
-            Response response3 =  WS.url("http://localhost:9000/products/3").setHeader("Content-Type", "application/json").get().get(3000L);
 
             //asserts
 
             assertThat(response1.getStatus()).isEqualTo(OK);
-            assertThat(Json.parse(response1.getBody()).toString()).isEqualTo(jsonProduct1.toString());
-            assertThat(response2.getStatus()).isEqualTo(OK);
-            assertThat(Json.parse(response2.getBody()).toString()).isEqualTo(jsonProduct2.toString());
-            assertThat(response3.getStatus()).isEqualTo(OK);
-            assertThat(Json.parse(response3.getBody()).toString()).isEqualTo(jsonProduct3.toString());
+            assertThat(Json.parse(response1.getBody()).get("name").asText()).isEqualTo(p1.getName());
+            assertThat(Json.parse(response1.getBody()).get("id").asInt()).isEqualTo(p1.getId());
+            assertThat(Json.parse(response1.getBody()).get("name").asText()).isEqualTo(p1.getName());
+
         });
     }
 
     @Test
     public void TestWhenGetProductWithInexistingIdThenReturnsNotFound(){
         running(testServer(9000, fakeApplication()), () -> {
-            ObjectNode json = newObject();
-            String productName1 = "pelota";
-            String productName2 = "soga";
-            String productName3 = "mesa";
-
-            json.put("Name", productName1);
-            JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
-
-            json.put("Name", productName2);
-            JsonNode jsonProduct2 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
-
-            json.put("Name", productName3);
-            JsonNode jsonProduct3 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L)).getBody());
 
             //operation
             Response response1 =  WS.url("http://localhost:9000/products/999").setHeader("Content-Type", "application/json").get().get(3000L);
@@ -152,34 +154,50 @@ public class ProductControllerTest
     }
 
     @Test
-    public void TestWhenUpdateAProductThenChangesCorrectly(){
+    public void TestWhenUpdateAProductNameThenChangesCorrectly(){
         running(testServer(9000, fakeApplication()), () -> {
+            String productNewName = "puerta";
 
-            ObjectNode jsonOldProduct = newObject();
             ObjectNode jsonNewProduct = newObject();
-
-            String productOldName = "pelota";
-            String productNewName = "soga";
-
-            jsonOldProduct.put("Name", productOldName);
-
-            JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(jsonOldProduct.toString()).get(3000L)).getBody());
-
-            jsonNewProduct.put("Name", productNewName);
-            jsonNewProduct.put("Id", jsonProduct1.get("Id").asInt());
-
+            jsonNewProduct.put("name", productNewName);
+            jsonNewProduct.put("id", p1.getId());
 
             //operation
             Response responseUpdate = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").put(jsonNewProduct.toString()).get(3000L);
-            Response responseGet = WS.url("http://localhost:9000/products/"+jsonProduct1.get("Id").asInt()).setHeader("Content-Type", "application/json").get().get(3000L);
+            Response responseGet = WS.url("http://localhost:9000/products/"+p1.getId()).setHeader("Content-Type", "application/json").get().get(3000L);
 
             //asserts
 
             assertThat(responseUpdate.getStatus()).isEqualTo(OK);
             assertThat(responseGet.getStatus()).isEqualTo(OK);
-            assertThat(Json.parse(responseUpdate.getBody()).get("Name").asText()).isEqualTo(productNewName);
-            assertThat(Json.parse(responseUpdate.getBody()).get("Id").asInt() == jsonProduct1.get("Id").asInt()).isTrue();
-            assertThat(responseUpdate.getBody().toString()).isEqualTo(responseGet.getBody().toString());
+            assertThat(Json.parse(responseUpdate.getBody()).get("name").asText()).isEqualTo(productNewName);
+            assertThat(Json.parse(responseUpdate.getBody()).get("id").asInt() == p1.getId()).isTrue();
+            assertThat((Json.parse(responseUpdate.getBody()).get("description") == null && p1.getDescription() == null)  || Json.parse(responseUpdate.getBody()).get("description").asText().equals(p1.getDescription())).isTrue();
+
+
+        });
+    }
+
+    @Test
+    public void TestWhenUpdateAProductDescriptionThenChangesCorrectly(){
+        running(testServer(9000, fakeApplication()), () -> {
+            String productNewDescription = "para nose";
+
+            ObjectNode jsonNewProduct = newObject();
+            jsonNewProduct.put("description", productNewDescription);
+            jsonNewProduct.put("id", p1.getId());
+
+            //operation
+            Response responseUpdate = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").put(jsonNewProduct.toString()).get(3000L);
+            Response responseGet = WS.url("http://localhost:9000/products/"+p1.getId()).setHeader("Content-Type", "application/json").get().get(3000L);
+
+            //asserts
+
+            assertThat(responseUpdate.getStatus()).isEqualTo(OK);
+            assertThat(responseGet.getStatus()).isEqualTo(OK);
+            assertThat(Json.parse(responseUpdate.getBody()).get("name").asText()).isEqualTo(p1.getName());
+            assertThat(Json.parse(responseUpdate.getBody()).get("id").asInt() == p1.getId()).isTrue();
+            assertThat(Json.parse(responseUpdate.getBody()).get("description").asText().equals(productNewDescription)).isTrue();
 
         });
     }
@@ -188,21 +206,11 @@ public class ProductControllerTest
     public void TestWhenTryUpdateProductThatNotExistThenReturnsNotFound(){
         running(testServer(9000, fakeApplication()), () -> {
 
-            ObjectNode jsonOldProduct = newObject();
             ObjectNode jsonNewProduct = newObject();
+            jsonNewProduct.put("name", "pelota");
+            jsonNewProduct.put("id", 999);
 
-            String productOldName = "pelota";
-            String productNewName = "soga";
-
-            jsonOldProduct.put("Name", productOldName);
-
-            JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(jsonOldProduct.toString()).get(3000L)).getBody());
-
-            jsonNewProduct.put("Name", productNewName);
-            jsonNewProduct.put("Id", 9999);
-
-
-            //operation
+             //operation
             Response responseUpdate = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").put(jsonNewProduct.toString()).get(3000L);
 
             //asserts
@@ -216,19 +224,12 @@ public class ProductControllerTest
     @Test
     public void TestWhenTryUpdateProductWithEmptyNameThenReturnsBadRequest(){
         running(testServer(9000, fakeApplication()), () -> {
-
-            ObjectNode jsonOldProduct = newObject();
             ObjectNode jsonNewProduct = newObject();
 
-            String productOldName = "pelota";
             String productNewName = "";
 
-            jsonOldProduct.put("Name", productOldName);
-
-            JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(jsonOldProduct.toString()).get(3000L)).getBody());
-
-            jsonNewProduct.put("Name", productNewName);
-            jsonNewProduct.put("Id", jsonProduct1.get("Id").asInt());
+            jsonNewProduct.put("name", productNewName);
+            jsonNewProduct.put("id", p1.getId());
 
 
             //operation
@@ -252,7 +253,7 @@ public class ProductControllerTest
             String productOldName = "pelota";
             String productNewName = "";
 
-            jsonOldProduct.put("Name", productOldName);
+            jsonOldProduct.put("name", productOldName);
 
             JsonNode jsonProduct1 = Json.parse((WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(jsonOldProduct.toString()).get(3000L)).getBody());
 
@@ -274,20 +275,14 @@ public class ProductControllerTest
             ObjectNode json = newObject();
             String productName1 = "pelota";
 
-            json.put("Name", productName1);
-            Response responseCreate = WS.url("http://localhost:9000/products").setHeader("Content-Type", "application/json").post(json.toString()).get(3000L);
+            json.put("name", productName1);
 
-
-            JsonNode jsonProduct1 = Json.parse(responseCreate.getBody());
-            int id = jsonProduct1.get("Id").asInt();
-            Response responseGetBeforeDelete = WS.url("http://localhost:9000/products/"+ id).setHeader("Content-Type", "application/json").get().get(3000L);
-            Response responseDelete = WS.url("http://localhost:9000/products/"+ id).setHeader("Content-Type", "application/json").delete().get(3000L);
+            int id = p1.getId();
+            Response responseDelete = WS.url("http://localhost:9000/products/"+ id).delete().get(3000L);
             Response responseGetAfterDelete = WS.url("http://localhost:9000/products/"+ id).setHeader("Content-Type", "application/json").get().get(3000L);
 
 
             //asserts
-            assertThat(responseCreate.getStatus()).isEqualTo(OK);
-            assertThat(responseGetBeforeDelete.getStatus()).isEqualTo(OK);
             assertThat(responseDelete.getStatus()).isEqualTo(OK);
             assertThat(responseGetAfterDelete.getStatus()).isEqualTo(NOT_FOUND);
 

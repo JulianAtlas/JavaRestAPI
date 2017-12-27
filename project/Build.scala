@@ -14,7 +14,9 @@ object ApplicationBuild extends Build {
     cache,
     "org.projectlombok" % "lombok" % "1.16.14",
     "org.hibernate" % "hibernate-entitymanager" % "3.6.9.Final",
-    "commons-logging" % "commons-logging" % "1.2"
+    "commons-logging" % "commons-logging" % "1.2",
+    "org.mockito" % "mockito-core" % "1.10.19",
+    "org.springframework" % "spring-context" % "3.2.9.RELEASE"
     // Add your project dependencies here,
   )
 

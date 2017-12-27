@@ -22,7 +22,8 @@ public class ProductService {
     public Product getProduct(int id){
 
         return JPA.withTransaction(()->{
-            if(idExists(id)) return JPA.em().find(Product.class, id);
+            Product p = JPA.em().find(Product.class, id);
+            if(p != null) return p;
             else return null;
         });
     }
@@ -42,8 +43,8 @@ public class ProductService {
         int id = product.getId();
 
         return JPA.withTransaction(()->{
-            if(idExists(id)){
-                Product p = JPA.em().find(Product.class,id);
+            Product p = JPA.em().find(Product.class, id);
+            if(p != null){
                 p.updateBy(product);
                 JPA.em().persist(p);
                 return p;
@@ -56,8 +57,8 @@ public class ProductService {
     public Product deleteProduct(int id){
 
         return JPA.withTransaction(()->{
-            if(idExists(id)){
-                Product p = JPA.em().find(Product.class,id);
+            Product p = JPA.em().find(Product.class, id);
+            if(p != null){
                 JPA.em().remove(p);
                 return p;
             }
@@ -65,11 +66,4 @@ public class ProductService {
         });
     }
 
-    private boolean idExists(int id){
-
-        if(JPA.em().find(Product.class, id) == null){
-            return false;
-        }
-        return true;
-    }
 }
